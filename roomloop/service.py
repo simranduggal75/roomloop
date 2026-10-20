@@ -249,15 +249,19 @@ class BookingService:
                 "bookings": [self._booking_json(r) for r in rows]}
 
     # ---------- cancel ----------
-    def cancel_booking(self, booking_id: int, scope: str = "instance") -> dict:
-        """scope='instance' cancels just this booking; scope='series' cancels the whole
-        series it belongs to (future instances only)."""
-        if scope not in ("instance", "series"):
+    def cancel_booking(self, booking_id: int, scope: Optional[str] = None) -> dict:
+        """Cancelling a booking that belongs to a recurring series cancels all future
+        instances of that series and leaves past ones intact (the brief). Pass
+        scope='instance' to cancel only this one occurrence. A single booking is just
+        cancelled. scope='series' on a non-recurring booking is an error."""
+        if scope not in (None, "instance", "series"):
             raise InvalidInput("scope must be 'instance' or 'series'")
         with self._tx() as conn:
             row = conn.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,)).fetchone()
             if row is None:
                 raise NotFound(f"booking {booking_id} does not exist")
+            if scope is None:
+                scope = "series" if row["series_id"] is not None else "instance"
             if scope == "series":
                 if row["series_id"] is None:
                     raise InvalidInput("booking is not part of a series")

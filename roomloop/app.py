@@ -56,7 +56,7 @@ def create_app(db_path: Optional[str] = None, service: Optional[BookingService] 
         return svc.get_booking(booking_id)
 
     @app.delete("/bookings/{booking_id}")
-    def cancel_booking(booking_id: int, scope: str = "instance"):
+    def cancel_booking(booking_id: int, scope: Optional[str] = None):
         return svc.cancel_booking(booking_id, scope)
 
     @app.get("/series/{series_id}")
