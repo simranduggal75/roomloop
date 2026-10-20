@@ -10,6 +10,8 @@ from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 
+MIN_YEAR, MAX_YEAR = 2000, 2100   # sane booking window; also avoids datetime overflow near year 1/9999
+
 OFFICE_TZ = {
     "Berlin": ZoneInfo("Europe/Berlin"),
     "Denver": ZoneInfo("America/Denver"),
@@ -29,6 +31,8 @@ def parse_local(value: str, field: str) -> datetime:
         raise ValueError(f"{field} must be an ISO datetime like 2026-07-02T09:00:00")
     if dt.tzinfo is not None:
         raise ValueError(f"{field} must be a naive local time with no UTC offset or 'Z'")
+    if not MIN_YEAR <= dt.year <= MAX_YEAR:
+        raise ValueError(f"{field} year must be between {MIN_YEAR} and {MAX_YEAR}")
     return dt.replace(microsecond=0)
 
 

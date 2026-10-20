@@ -88,3 +88,13 @@ def test_concurrent_requests_cannot_double_book(svc):
     with ThreadPoolExecutor(8) as pool:
         results = list(pool.map(attempt, range(8)))
     assert results.count(True) == 1
+
+
+def test_absurd_ids_and_dates_are_clean_errors_not_500s(client):
+    ok = ("2026-07-02T09:00:00", "2026-07-02T10:00:00")
+    assert book(client, 10**30, *ok).status_code == 422
+    assert client.get(f"/bookings/{10**30}").status_code == 422
+    assert client.delete(f"/series/{10**30}").status_code == 422
+    assert client.get("/bookings", params={"room_id": 10**30}).status_code == 422
+    assert book(client, BERLIN, "9999-12-31T22:00:00", "9999-12-31T23:00:00").status_code == 422
+    assert book(client, DENVER, "0001-01-01T00:00:00", "0001-01-01T01:00:00").status_code == 422
