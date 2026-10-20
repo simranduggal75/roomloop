@@ -1,15 +1,19 @@
 import os
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Path, Query, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .service import BookingService, DomainError
 
 
+MAX_ID = 2**31 - 1   # keeps absurd ids a clean 422 instead of a database overflow
+PathId = Annotated[int, Path(ge=1, le=MAX_ID)]
+
+
 class BookingIn(BaseModel):
-    room_id: int
+    room_id: int = Field(ge=1, le=MAX_ID)
     start: str   # naive local ISO, e.g. 2026-07-02T09:00:00 (local to the room's office)
     end: str
     user: str
@@ -48,23 +52,23 @@ def create_app(db_path: Optional[str] = None, service: Optional[BookingService] 
                                     body.repeat, body.repeat_until)
 
     @app.get("/bookings")
-    def list_bookings(room_id: Optional[int] = None, include_cancelled: bool = False):
+    def list_bookings(room_id: Annotated[Optional[int], Query(ge=1, le=MAX_ID)] = None, include_cancelled: bool = False):
         return svc.list_bookings(room_id, include_cancelled)
 
     @app.get("/bookings/{booking_id}")
-    def get_booking(booking_id: int):
+    def get_booking(booking_id: PathId):
         return svc.get_booking(booking_id)
 
     @app.delete("/bookings/{booking_id}")
-    def cancel_booking(booking_id: int, scope: Optional[str] = None):
+    def cancel_booking(booking_id: PathId, scope: Optional[str] = None):
         return svc.cancel_booking(booking_id, scope)
 
     @app.get("/series/{series_id}")
-    def get_series(series_id: int):
+    def get_series(series_id: PathId):
         return svc.get_series(series_id)
 
     @app.delete("/series/{series_id}")
-    def cancel_series(series_id: int):
+    def cancel_series(series_id: PathId):
         return svc.cancel_series(series_id)
 
     return app
