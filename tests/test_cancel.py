@@ -41,18 +41,21 @@ def test_cancelled_series_frees_the_room(client, clock):
     assert book(client, BERLIN, "2026-06-22T09:00:00", "2026-06-22T10:00:00").status_code == 201
 
 
-def test_cancel_one_instance_leaves_the_rest(client):
+def test_cancel_one_instance_on_request(client):
     created = recur(client, *SERIES).json()["created"]
-    r = client.delete(f"/bookings/{created[1]['id']}")
+    r = client.delete(f"/bookings/{created[1]['id']}", params={"scope": "instance"})
     assert r.json()["cancelled"] == 1
     assert [s for _, s in _statuses(client, created[0]["series_id"])].count("cancelled") == 1
 
 
-def test_cancel_series_via_any_instance(client, clock):
+def test_cancelling_a_recurring_booking_defaults_to_all_future_instances(client, clock):
+    # The brief: cancelling a recurring booking cancels all future instances, past ones stay.
     created = recur(client, *SERIES).json()["created"]
     clock.set("2026-06-15T12:00:00")
-    r = client.delete(f"/bookings/{created[0]['id']}", params={"scope": "series"})
-    assert r.json()["cancelled"] == 2
+    r = client.delete(f"/bookings/{created[0]['id']}")        # a past occurrence, no scope given
+    assert r.json() == {"series_id": created[0]["series_id"], "cancelled": 2, "kept": 3}
+    assert [s for _, s in _statuses(client, created[0]["series_id"])] == [
+        "active", "active", "active", "cancelled", "cancelled"]
 
 
 def test_cancel_errors(client, clock):
