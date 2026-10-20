@@ -1,0 +1,50 @@
+{
+  "_comment": "Weekly series that straddle a DST change. Every occurrence must stay at the same LOCAL clock time (R3), so the UTC hour must shift by one at the changeover. A naive 'add 7*24h' implementation produces local times an hour off after the change - the Denver complaint from the Office Manager. Rooms: 3 Aurora/Berlin, 9 Cinder/Denver. DST 2026: Denver 8 Mar and 1 Nov; Berlin 29 Mar and 25 Oct.",
+  "scenarios": [
+    {
+      "name": "denver_fall_back_1_nov",
+      "room_id": 9,
+      "start": "2026-10-26T09:00:00",
+      "end": "2026-10-26T10:00:00",
+      "repeat_until": "2026-11-16",
+      "expected_local_starts": ["2026-10-26T09:00:00", "2026-11-02T09:00:00", "2026-11-09T09:00:00", "2026-11-16T09:00:00"],
+      "expected_utc_hours": [15, 16, 16, 16]
+    },
+    {
+      "name": "denver_spring_forward_8_mar",
+      "room_id": 9,
+      "start": "2026-03-02T09:00:00",
+      "end": "2026-03-02T10:00:00",
+      "repeat_until": "2026-03-16",
+      "expected_local_starts": ["2026-03-02T09:00:00", "2026-03-09T09:00:00", "2026-03-16T09:00:00"],
+      "expected_utc_hours": [16, 15, 15]
+    },
+    {
+      "name": "berlin_spring_forward_29_mar",
+      "room_id": 3,
+      "start": "2026-03-23T09:00:00",
+      "end": "2026-03-23T10:00:00",
+      "repeat_until": "2026-04-06",
+      "expected_local_starts": ["2026-03-23T09:00:00", "2026-03-30T09:00:00", "2026-04-06T09:00:00"],
+      "expected_utc_hours": [8, 7, 7]
+    },
+    {
+      "name": "berlin_fall_back_25_oct",
+      "room_id": 3,
+      "start": "2026-10-19T09:00:00",
+      "end": "2026-10-19T10:00:00",
+      "repeat_until": "2026-11-02",
+      "expected_local_starts": ["2026-10-19T09:00:00", "2026-10-26T09:00:00", "2026-11-02T09:00:00"],
+      "expected_utc_hours": [7, 8, 8]
+    }
+  ],
+  "spring_forward_gap": {
+    "_comment": "02:30 on 8 Mar 2026 never happens in Denver. That occurrence is skipped with a reason; the rest of the series is still created.",
+    "room_id": 9,
+    "start": "2026-03-01T02:30:00",
+    "end": "2026-03-01T03:00:00",
+    "repeat_until": "2026-03-15",
+    "expected_created_starts": ["2026-03-01T02:30:00", "2026-03-15T02:30:00"],
+    "expected_skipped": [{"start": "2026-03-08T02:30:00", "reason": "nonexistent_local_time"}]
+  }
+}
